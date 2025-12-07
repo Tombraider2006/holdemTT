@@ -3,7 +3,7 @@ package com.holdem.poker.model
 /**
  * Ранги покерных комбинаций от старших к младшим
  */
-enum class HandRank(val value: Int, val name: String) {
+enum class HandRank(val value: Int, val displayName: String) {
     HIGH_CARD(1, "High Card"),
     PAIR(2, "Pair"),
     TWO_PAIR(3, "Two Pair"),

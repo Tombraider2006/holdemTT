@@ -84,7 +84,7 @@ class RangeAnalyzer {
                 )
                 evaluation.rank.value / 10.0
             } else {
-                evaluatePreFlopStrength(hand.first, hand.second)
+                evaluatePreFlopStrength(hand.first, hand.second).toDouble()
             }
         }
         
