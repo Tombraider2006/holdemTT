@@ -7,9 +7,12 @@ import com.holdem.poker.engine.PokerHandEvaluator
 import com.holdem.poker.model.*
 import com.holdem.poker.strategy.BettingHelper
 import com.holdem.poker.strategy.RangeAnalyzer
+import com.holdem.poker.util.WhileUiSubscribed
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 class GameViewModel : ViewModel() {
@@ -22,41 +25,96 @@ class GameViewModel : ViewModel() {
     // История действий оппонентов для анализа диапазона
     private val opponentActionsHistory = mutableMapOf<String, MutableList<RangeAnalyzer.OpponentAction>>()
     
+    // Внутренние StateFlow для отдельных частей состояния
     private val _players = MutableStateFlow<List<Player>>(emptyList())
-    val players: StateFlow<List<Player>> = _players.asStateFlow()
-    
     private val _gameState = MutableStateFlow(GameState.WAITING)
-    val gameState: StateFlow<GameState> = _gameState.asStateFlow()
-    
     private val _communityCards = MutableStateFlow<List<Card>>(emptyList())
-    val communityCards: StateFlow<List<Card>> = _communityCards.asStateFlow()
-    
     private val _pot = MutableStateFlow(0)
-    val pot: StateFlow<Int> = _pot.asStateFlow()
-    
     private val _currentPlayerIndex = MutableStateFlow(0)
-    val currentPlayerIndex: StateFlow<Int> = _currentPlayerIndex.asStateFlow()
-    
     private val _currentBet = MutableStateFlow(0)
-    val currentBet: StateFlow<Int> = _currentBet.asStateFlow()
-    
     private val _smallBlind = MutableStateFlow(10)
-    val smallBlind: StateFlow<Int> = _smallBlind.asStateFlow()
-    
     private val _bigBlind = MutableStateFlow(20)
-    val bigBlind: StateFlow<Int> = _bigBlind.asStateFlow()
-    
     private val _bettingRecommendation = MutableStateFlow<BettingHelper.BettingRecommendation?>(null)
-    val bettingRecommendation: StateFlow<BettingHelper.BettingRecommendation?> = _bettingRecommendation.asStateFlow()
-    
     private val _opponentRanges = MutableStateFlow<Map<String, RangeAnalyzer.HandRange>>(emptyMap())
-    val opponentRanges: StateFlow<Map<String, RangeAnalyzer.HandRange>> = _opponentRanges.asStateFlow()
-    
     private val _rangeStrengths = MutableStateFlow<Map<String, RangeAnalyzer.RangeStrength>>(emptyMap())
-    val rangeStrengths: StateFlow<Map<String, RangeAnalyzer.RangeStrength>> = _rangeStrengths.asStateFlow()
-    
     private val _message = MutableStateFlow<String?>(null)
-    val message: StateFlow<String?> = _message.asStateFlow()
+    private val _isLoading = MutableStateFlow(false)
+    private val _error = MutableStateFlow<String?>(null)
+    
+    // Единое состояние UI с оптимизацией WhileUiSubscribed
+    val uiState: StateFlow<GameUiState> = combine(
+        _players,
+        _gameState,
+        _communityCards,
+        _pot,
+        _currentPlayerIndex,
+        _currentBet,
+        _smallBlind,
+        _bigBlind,
+        _bettingRecommendation,
+        _opponentRanges,
+        _rangeStrengths,
+        _message,
+        _isLoading,
+        _error
+    ) { players, gameState, communityCards, pot, currentPlayerIndex, 
+        currentBet, smallBlind, bigBlind, bettingRecommendation, 
+        opponentRanges, rangeStrengths, message, isLoading, error ->
+        GameUiState(
+            players = players,
+            gameState = gameState,
+            communityCards = communityCards,
+            pot = pot,
+            currentPlayerIndex = currentPlayerIndex,
+            currentBet = currentBet,
+            smallBlind = smallBlind,
+            bigBlind = bigBlind,
+            bettingRecommendation = bettingRecommendation,
+            opponentRanges = opponentRanges,
+            rangeStrengths = rangeStrengths,
+            message = message,
+            isLoading = isLoading,
+            error = error
+        )
+    }.stateIn(
+        scope = viewModelScope,
+        started = WhileUiSubscribed,
+        initialValue = GameUiState()
+    )
+    
+    // Обратная совместимость - оставляем отдельные StateFlow для постепенного перехода
+    @Deprecated("Используйте uiState вместо отдельных StateFlow", ReplaceWith("uiState"))
+    val players: StateFlow<List<Player>> = _players
+    
+    @Deprecated("Используйте uiState вместо отдельных StateFlow", ReplaceWith("uiState"))
+    val gameState: StateFlow<GameState> = _gameState
+    
+    @Deprecated("Используйте uiState вместо отдельных StateFlow", ReplaceWith("uiState"))
+    val communityCards: StateFlow<List<Card>> = _communityCards
+    
+    @Deprecated("Используйте uiState вместо отдельных StateFlow", ReplaceWith("uiState"))
+    val pot: StateFlow<Int> = _pot
+    
+    @Deprecated("Используйте uiState вместо отдельных StateFlow", ReplaceWith("uiState"))
+    val currentPlayerIndex: StateFlow<Int> = _currentPlayerIndex
+    
+    @Deprecated("Используйте uiState вместо отдельных StateFlow", ReplaceWith("uiState"))
+    val currentBet: StateFlow<Int> = _currentBet
+    
+    @Deprecated("Используйте uiState вместо отдельных StateFlow", ReplaceWith("uiState"))
+    val smallBlind: StateFlow<Int> = _smallBlind
+    
+    @Deprecated("Используйте uiState вместо отдельных StateFlow", ReplaceWith("uiState"))
+    val bigBlind: StateFlow<Int> = _bigBlind
+    
+    @Deprecated("Используйте uiState вместо отдельных StateFlow", ReplaceWith("uiState"))
+    val bettingRecommendation: StateFlow<BettingHelper.BettingRecommendation?> = _bettingRecommendation
+    
+    @Deprecated("Используйте uiState вместо отдельных StateFlow", ReplaceWith("uiState"))
+    val opponentRanges: StateFlow<Map<String, RangeAnalyzer.HandRange>> = _opponentRanges
+    
+    @Deprecated("Используйте uiState вместо отдельных StateFlow", ReplaceWith("uiState"))
+    val rangeStrengths: StateFlow<Map<String, RangeAnalyzer.RangeStrength>> = _rangeStrengths
     
     init {
         startNewGame()
@@ -64,36 +122,51 @@ class GameViewModel : ViewModel() {
     
     fun startNewGame() {
         viewModelScope.launch {
-            val newPlayers = listOf(
-                Player("player1", "Вы", 1000),
-                Player("ai1", "ИИ 1", 1000),
-                Player("ai2", "ИИ 2", 1000),
-                Player("ai3", "ИИ 3", 1000)
-            )
-            _players.value = newPlayers
-            startNewHand()
+            _isLoading.value = true
+            try {
+                val newPlayers = listOf(
+                    Player("player1", "Вы", 1000),
+                    Player("ai1", "ИИ 1", 1000),
+                    Player("ai2", "ИИ 2", 1000),
+                    Player("ai3", "ИИ 3", 1000)
+                )
+                _players.value = newPlayers
+                startNewHand()
+            } catch (e: Exception) {
+                _error.value = e.message ?: "Ошибка при создании новой игры"
+            } finally {
+                _isLoading.value = false
+            }
         }
     }
     
     fun startNewHand() {
         viewModelScope.launch {
-            // Очищаем историю действий при новой раздаче
-            opponentActionsHistory.clear()
-            gameEngine.startNewHand(_players.value)
-            updateGameState()
+            try {
+                // Очищаем историю действий при новой раздаче
+                opponentActionsHistory.clear()
+                gameEngine.startNewHand(_players.value)
+                updateGameState()
+            } catch (e: Exception) {
+                _error.value = e.message ?: "Ошибка при начале новой раздачи"
+            }
         }
     }
     
     fun playerAction(action: PlayerAction, betAmount: Int = 0) {
         viewModelScope.launch {
-            val currentPlayer = _players.value[_currentPlayerIndex.value]
-            if (currentPlayer.id != "player1") return@launch
+            val currentPlayer = _players.value.getOrNull(_currentPlayerIndex.value)
+            if (currentPlayer?.id != "player1") return@launch
             
-            val success = gameEngine.processPlayerAction(currentPlayer, action, betAmount)
-            if (success) {
-                _players.value = _players.value.toList()
-                updateGameState()
-                processAITurns()
+            try {
+                val success = gameEngine.processPlayerAction(currentPlayer, action, betAmount)
+                if (success) {
+                    _players.update { it.toList() }
+                    updateGameState()
+                    processAITurns()
+                }
+            } catch (e: Exception) {
+                _error.value = e.message ?: "Ошибка при выполнении действия"
             }
         }
     }
@@ -110,15 +183,15 @@ class GameViewModel : ViewModel() {
                     break
                 }
                 
-                val currentPlayer = _players.value[_currentPlayerIndex.value]
-                if (currentPlayer.id == "player1") {
+                val currentPlayer = _players.value.getOrNull(_currentPlayerIndex.value)
+                if (currentPlayer?.id == "player1") {
                     // Ход игрока
                     break
                 }
                 
                 // Ход AI
                 val aiAction = ai.makeDecision(
-                    currentPlayer,
+                    currentPlayer!!,
                     _communityCards.value,
                     gameEngine.currentBet,
                     _pot.value
@@ -133,7 +206,7 @@ class GameViewModel : ViewModel() {
                 gameEngine.processPlayerAction(currentPlayer, aiAction, betAmount)
                 // Записываем действие AI для анализа диапазона
                 recordOpponentAction(currentPlayer.id, aiAction, betAmount)
-                _players.value = _players.value.toList()
+                _players.update { it.toList() }
                 gameEngine.nextPlayer(_players.value)
                 _currentPlayerIndex.value = gameEngine.currentPlayerIndex
                 
@@ -248,5 +321,12 @@ class GameViewModel : ViewModel() {
             history.removeAt(0)
         }
     }
+    
+    fun clearError() {
+        _error.value = null
+    }
+    
+    fun clearMessage() {
+        _message.value = null
+    }
 }
-

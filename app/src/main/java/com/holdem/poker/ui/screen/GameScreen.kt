@@ -5,7 +5,6 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -13,6 +12,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.holdem.poker.model.PlayerAction
 import com.holdem.poker.strategy.RangeAnalyzer
@@ -26,17 +26,21 @@ import com.holdem.poker.ui.viewmodel.GameViewModel
 
 @Composable
 fun GameScreen(viewModel: GameViewModel = viewModel()) {
-    val players by viewModel.players.collectAsState()
-    val gameState by viewModel.gameState.collectAsState()
-    val communityCards by viewModel.communityCards.collectAsState()
-    val pot by viewModel.pot.collectAsState()
-    val currentBet by viewModel.currentBet.collectAsState()
-    val currentPlayerIndex by viewModel.currentPlayerIndex.collectAsState()
-    val smallBlind by viewModel.smallBlind.collectAsState()
-    val bigBlind by viewModel.bigBlind.collectAsState()
-    val bettingRecommendation by viewModel.bettingRecommendation.collectAsState()
-    val opponentRanges by viewModel.opponentRanges.collectAsState()
-    val rangeStrengths by viewModel.rangeStrengths.collectAsState()
+    // Используем единое состояние UI с оптимизацией collectAsStateWithLifecycle
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    
+    // Извлекаем значения из uiState для удобства
+    val players = uiState.players
+    val gameState = uiState.gameState
+    val communityCards = uiState.communityCards
+    val pot = uiState.pot
+    val currentBet = uiState.currentBet
+    val currentPlayerIndex = uiState.currentPlayerIndex
+    val smallBlind = uiState.smallBlind
+    val bigBlind = uiState.bigBlind
+    val bettingRecommendation = uiState.bettingRecommendation
+    val opponentRanges = uiState.opponentRanges
+    val rangeStrengths = uiState.rangeStrengths
     
     Box(
         modifier = Modifier
@@ -48,6 +52,71 @@ fun GameScreen(viewModel: GameViewModel = viewModel()) {
             modifier = Modifier.fillMaxSize(),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
+            // Обработка ошибок
+            uiState.error?.let { error ->
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = Color.Red.copy(alpha = 0.9f)
+                    )
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = error,
+                            color = Color.White,
+                            modifier = Modifier.weight(1f)
+                        )
+                        TextButton(onClick = { viewModel.clearError() }) {
+                            Text("✕", color = Color.White)
+                        }
+                    }
+                }
+            }
+            
+            // Обработка сообщений
+            uiState.message?.let { message ->
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = Gold.copy(alpha = 0.9f)
+                    )
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = message,
+                            color = Color.Black,
+                            modifier = Modifier.weight(1f)
+                        )
+                        TextButton(onClick = { viewModel.clearMessage() }) {
+                            Text("✕", color = Color.Black)
+                        }
+                    }
+                }
+            }
+            
+            // Индикатор загрузки
+            if (uiState.isLoading) {
+                CircularProgressIndicator(
+                    modifier = Modifier.padding(16.dp),
+                    color = Gold
+                )
+            }
             Spacer(modifier = Modifier.height(20.dp))
             
             // Верхние игроки (AI)

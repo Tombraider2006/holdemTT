@@ -129,3 +129,50 @@
 - Язык: Java (адаптировано для Kotlin/Android)
 - Звезды: 160
 
+## [2025-01-07] - Исправление ошибок компиляции
+
+### Критические ошибки компиляции (исправлено)
+- **HandRank.kt:6** - Конфликт имени `name` с базовым классом Enum. Исправлено: переименовано в `displayName`
+- **RangeAnalyzer.kt:41** - Несоответствие типов: функция `calculateRangeProbability` ожидала `HandRange`, но получала `List<Pair<Card, Card>>`. Исправлено: изменена сигнатура функции
+- **RangeAnalyzer.kt:87** - Несоответствие типов: `evaluatePreFlopStrength` возвращает `Float`, но нужен `Double`. Исправлено: добавлено `.toDouble()`
+- **RangeAnalyzer.kt:91-93** - Ошибки с методами `average()`, `maxOrNull()`, `minOrNull()` из-за неправильного типа. Исправлено после исправления типа в строке 87
+- **RangeAnalyzer.kt:101-102** - Ошибка "The floating-point literal does not conform to the expected type Nothing". Исправлено после исправления типов выше
+- **Theme.kt:30** - Ошибка "Unresolved reference: getWindowInsetsController". Исправлено: заменено на `WindowInsetsControllerCompat(window, view)`
+
+### Проблемы при сборке
+- Сборка APK падала из-за множественных ошибок компиляции Kotlin
+- Все ошибки были исправлены, проект должен собираться успешно
+
+### Уроки
+- Всегда проверять типы возвращаемых значений функций
+- Проверять совместимость API при использовании Android библиотек
+- Избегать конфликтов имен с базовыми классами (Enum.name уже существует)
+
+## [2025-01-07] - Анализ проекта через Context7
+
+### Анализ архитектуры
+- Проведен анализ проекта с использованием Context7 и лучших практик Android
+- Создан документ `docs/IMPROVEMENTS.md` с рекомендациями по улучшению
+
+### Найденные проблемы
+- Устаревшие версии зависимостей (Compose BOM 2023.10.01, Kotlin 1.9.20)
+- Множество отдельных StateFlow вместо единого UiState
+- Отсутствие обработки ошибок через Async sealed class
+- Не используется WhileUiSubscribed для оптимизации ресурсов
+- Отсутствие Repository слоя (логика в ViewModel)
+- Отсутствие Dependency Injection (Hilt)
+- Использование collectAsState вместо collectAsStateWithLifecycle
+
+### Рекомендации
+- Обновить зависимости до актуальных версий (Compose BOM 2024.12.01, Kotlin 2.1.10)
+- Внедрить UiState паттерн для единого состояния
+- Добавить WhileUiSubscribed для оптимизации StateFlow
+- Создать Repository слой для разделения логики
+- Добавить Hilt для Dependency Injection
+- Использовать collectAsStateWithLifecycle для автоматической остановки сбора
+
+### Приоритеты
+- Высокий: обновление зависимостей, UiState паттерн, оптимизация StateFlow
+- Средний: Repository слой, Hilt, обработка ошибок
+- Низкий: Version Catalog, дополнительные оптимизации
+
