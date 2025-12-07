@@ -9,6 +9,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -27,9 +29,30 @@ fun CardView(
     Box(
         modifier = modifier
             .size(width = 60.dp, height = 84.dp)
-            .clip(RoundedCornerShape(8.dp))
-            .background(if (isFaceUp) Color.White else Color(0xFF1B5E20))
-            .border(1.dp, Color.Black, RoundedCornerShape(8.dp)),
+            .shadow(
+                elevation = 8.dp,
+                shape = RoundedCornerShape(10.dp),
+                spotColor = Color.Black.copy(alpha = 0.3f)
+            )
+            .clip(RoundedCornerShape(10.dp))
+            .background(
+                if (isFaceUp) {
+                    Brush.verticalGradient(
+                        colors = listOf(
+                            Color.White,
+                            Color(0xFFF5F5F5)
+                        )
+                    )
+                } else {
+                    Brush.verticalGradient(
+                        colors = listOf(
+                            Color(0xFF2E7D32),
+                            Color(0xFF1B5E20)
+                        )
+                    )
+                }
+            )
+            .border(2.dp, Color.Black.copy(alpha = 0.2f), RoundedCornerShape(10.dp)),
         contentAlignment = Alignment.Center
     ) {
         if (isFaceUp && card != null) {
@@ -39,28 +62,52 @@ fun CardView(
             }
             
             Column(
-                modifier = Modifier.padding(4.dp),
+                modifier = Modifier.padding(6.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
                     text = card.rank.symbol,
                     color = textColor,
-                    fontSize = 20.sp,
-                    fontWeight = FontWeight.Bold
+                    fontSize = 22.sp,
+                    fontWeight = FontWeight.ExtraBold,
+                    letterSpacing = 0.5.sp
                 )
+                Spacer(modifier = Modifier.height(2.dp))
                 Text(
                     text = card.suit.symbol,
                     color = textColor,
-                    fontSize = 24.sp
+                    fontSize = 28.sp,
+                    fontWeight = FontWeight.Bold
                 )
             }
         } else if (!isFaceUp) {
-            // Рубашка карты
+            // Рубашка карты с узором
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .background(Color(0xFF1B5E20))
-            )
+                    .background(
+                        Brush.radialGradient(
+                            colors = listOf(
+                                Color(0xFF388E3C).copy(alpha = 0.8f),
+                                Color(0xFF1B5E20)
+                            )
+                        )
+                    )
+            ) {
+                // Декоративный узор на рубашке
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(8.dp)
+                ) {
+                    Text(
+                        text = "♠",
+                        color = Color.White.copy(alpha = 0.1f),
+                        fontSize = 40.sp,
+                        modifier = Modifier.align(Alignment.Center)
+                    )
+                }
+            }
         }
     }
 }
