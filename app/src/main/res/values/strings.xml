@@ -1,16 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Texas Hold\'em</string>
-    <string name="fold">Fold</string>
-    <string name="call">Call</string>
-    <string name="raise">Raise</string>
-    <string name="check">Check</string>
-    <string name="bet">Bet</string>
-    <string name="all_in">All In</string>
-    <string name="your_chips">Your Chips: %1$d</string>
-    <string name="pot">Pot: %1$d</string>
-    <string name="dealer">Dealer</string>
-    <string name="small_blind">SB</string>
-    <string name="big_blind">BB</string>
+    <string name="app_name">Техасский Холдем</string>
+    <string name="fold">Сбросить</string>
+    <string name="call">Колл</string>
+    <string name="raise">Рейз</string>
+    <string name="check">Чек</string>
+    <string name="bet">Ставка</string>
+    <string name="all_in">Олл-ин</string>
+    <string name="your_chips">Ваши фишки: %1$d</string>
+    <string name="pot">Банк: %1$d</string>
+    <string name="dealer">Дилер</string>
+    <string name="small_blind">МБ</string>
+    <string name="big_blind">ББ</string>
 </resources>
 

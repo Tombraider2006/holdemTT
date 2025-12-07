@@ -157,8 +157,8 @@ private fun StrengthBar(label: String, value: Float, color: Color) {
 @Composable
 private fun DistributionRow(category: String, percentage: Double) {
     val color = when (category) {
-        "Strong" -> Color(0xFF4CAF50)
-        "Medium" -> Color(0xFFFF9800)
+        "Сильные" -> Color(0xFF4CAF50)
+        "Средние" -> Color(0xFFFF9800)
         else -> Color(0xFFF44336)
     }
     

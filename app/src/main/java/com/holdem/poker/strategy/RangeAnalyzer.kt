@@ -98,9 +98,9 @@ class RangeAnalyzer {
             minimum = minStrength.toFloat(),
             distribution = strengths.groupBy { 
                 when {
-                    it >= 0.7 -> "Strong"
-                    it >= 0.5 -> "Medium"
-                    else -> "Weak"
+                    it >= 0.7 -> "Сильные"
+                    it >= 0.5 -> "Средние"
+                    else -> "Слабые"
                 }
             }.mapValues { it.value.size.toDouble() / strengths.size }
         )

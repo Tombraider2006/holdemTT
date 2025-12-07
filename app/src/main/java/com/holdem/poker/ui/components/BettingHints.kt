@@ -92,7 +92,7 @@ fun BettingHints(
                     }
                     recommendation.equity?.let { equity ->
                         InfoBadge(
-                            label = "Equity",
+                            label = "Вероятность",
                             value = "${(equity * 100).toInt()}%",
                             color = Color(0xFF2196F3)
                         )
@@ -106,12 +106,12 @@ fun BettingHints(
 @Composable
 private fun ActionBadge(action: PlayerAction) {
     val (text, color) = when (action) {
-        PlayerAction.FOLD -> "FOLD" to Color.Red
-        PlayerAction.CHECK -> "CHECK" to Color.Gray
-        PlayerAction.CALL -> "CALL" to Color(0xFF4CAF50)
-        PlayerAction.BET -> "BET" to Color(0xFF2196F3)
-        PlayerAction.RAISE -> "RAISE" to Color(0xFFFF9800)
-        PlayerAction.ALL_IN -> "ALL-IN" to Color(0xFFFFD700)
+        PlayerAction.FOLD -> "СБРОСИТЬ" to Color.Red
+        PlayerAction.CHECK -> "ЧЕК" to Color.Gray
+        PlayerAction.CALL -> "КОЛЛ" to Color(0xFF4CAF50)
+        PlayerAction.BET -> "СТАВКА" to Color(0xFF2196F3)
+        PlayerAction.RAISE -> "РЕЙЗ" to Color(0xFFFF9800)
+        PlayerAction.ALL_IN -> "ОЛЛ-ИН" to Color(0xFFFFD700)
     }
     
     Box(

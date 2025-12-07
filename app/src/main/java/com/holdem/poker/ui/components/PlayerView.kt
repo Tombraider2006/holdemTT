@@ -100,7 +100,7 @@ fun PlayerView(
         if (player.isFolded) {
             Spacer(modifier = Modifier.height(4.dp))
             Text(
-                text = "FOLDED",
+                text = "СБРОШЕНО",
                 fontSize = 10.sp,
                 color = Color.Red
             )

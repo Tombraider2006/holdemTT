@@ -66,9 +66,9 @@ class GameViewModel : ViewModel() {
         viewModelScope.launch {
             val newPlayers = listOf(
                 Player("player1", "Вы", 1000),
-                Player("ai1", "AI 1", 1000),
-                Player("ai2", "AI 2", 1000),
-                Player("ai3", "AI 3", 1000)
+                Player("ai1", "ИИ 1", 1000),
+                Player("ai2", "ИИ 2", 1000),
+                Player("ai3", "ИИ 3", 1000)
             )
             _players.value = newPlayers
             startNewHand()

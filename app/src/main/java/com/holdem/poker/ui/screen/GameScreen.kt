@@ -225,7 +225,7 @@ fun ActionButtons(
             ),
             modifier = Modifier.weight(1f)
         ) {
-            Text("Fold")
+            Text("Сбросить")
         }
         
         if (currentBet == 0 || currentBet == playerCurrentBet) {
@@ -233,13 +233,13 @@ fun ActionButtons(
                 onClick = { viewModel.playerAction(PlayerAction.CHECK) },
                 modifier = Modifier.weight(1f)
             ) {
-                Text("Check")
+                Text("Чек")
             }
             Button(
                 onClick = { viewModel.playerAction(PlayerAction.BET, 50) },
                 modifier = Modifier.weight(1f)
             ) {
-                Text("Bet")
+                Text("Ставка")
             }
         } else {
             val callAmount = currentBet - playerCurrentBet
@@ -248,7 +248,7 @@ fun ActionButtons(
                 modifier = Modifier.weight(1f)
             ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text("Call")
+                    Text("Колл")
                     Text(
                         text = "$callAmount",
                         fontSize = 10.sp
@@ -260,7 +260,7 @@ fun ActionButtons(
                 modifier = Modifier.weight(1f)
             ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text("Raise")
+                    Text("Рейз")
                     Text(
                         text = "до ${currentBet * 2}",
                         fontSize = 10.sp
@@ -276,7 +276,7 @@ fun ActionButtons(
             ),
             modifier = Modifier.weight(1f)
         ) {
-            Text("All In")
+            Text("Олл-ин")
         }
     }
 }
