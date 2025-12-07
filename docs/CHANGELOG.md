@@ -172,7 +172,32 @@
 - Использовать collectAsStateWithLifecycle для автоматической остановки сбора
 
 ### Приоритеты
-- Высокий: обновление зависимостей, UiState паттерн, оптимизация StateFlow
-- Средний: Repository слой, Hilt, обработка ошибок
+- Высокий: обновление зависимостей, UiState паттерн, оптимизация StateFlow ✅
+- Средний: Repository слой ✅, Hilt, обработка ошибок
 - Низкий: Version Catalog, дополнительные оптимизации
+
+## [2025-01-07] - Добавлен Repository слой
+
+### ✅ Выполнено - Средний приоритет
+
+#### Repository слой
+- Создан интерфейс `GameRepository` для единой точки доступа к данным игры
+- Реализован `GameRepositoryImpl` с инкапсуляцией бизнес-логики
+- Рефакторинг `GameViewModel` для использования Repository вместо прямого доступа к `GameEngine`, `BettingHelper`, `RangeAnalyzer`
+
+**Преимущества:**
+- Разделение ответственности (Separation of Concerns)
+- Упрощение тестирования (можно мокировать Repository)
+- Готовность к добавлению других источников данных (локальное хранение, сеть)
+- Чистая архитектура (Clean Architecture)
+
+**Новые файлы:**
+- `app/src/main/java/com/holdem/poker/data/GameRepository.kt` - интерфейс и реализация Repository
+
+**Измененные файлы:**
+- `app/src/main/java/com/holdem/poker/ui/viewmodel/GameViewModel.kt` - рефакторинг на использование Repository
+
+### Следующие шаги
+- Добавление Hilt для Dependency Injection (упростит создание Repository)
+- Обработка ошибок через Async sealed class
 
