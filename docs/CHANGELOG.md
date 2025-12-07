@@ -1,5 +1,19 @@
 # Changelog
 
+## [2025-01-XX] - Проверка Android Studio
+
+### ✅ Проверено
+- **Android Studio 2025.2.2.7** - установлен в системе
+  - Версия: 2025.2.2.7 (через winget)
+  - Путь установки: `C:\Program Files\Android\Android Studio\bin\studio64.exe`
+  - Статус: установлен и доступен для использования
+  - Примечание: установка была выполнена ранее (не через текущую сессию)
+
+### Инструменты разработки
+- Android Studio доступен для открытия и работы с проектом
+- Включает в себя Android SDK, эмуляторы и все необходимые инструменты
+- Проект можно открыть через: `File → Open → D:\holdem`
+
 ## [2025-01-XX] - Начало разработки
 
 ### Добавлено
@@ -247,6 +261,13 @@
 - ✅ Все ошибки компиляции исправлены
 - ✅ Только предупреждения о deprecated API (Divider, statusBarColor)
 
+### GitHub Actions и релиз v0.3
+- Исправлен workflow для работы с Android SDK Platform 35
+- Исправлен синтаксис packages в setup-android action
+- Удален несуществующий параметр make_latest из action-gh-release
+- Релиз v0.3 успешно создан через GitHub CLI: https://github.com/Tombraider2006/holdemTT/releases/tag/v0.3
+- APK загружен в релиз из локальной сборки
+
 ## [2025-01-XX] - Улучшение визуальной составляющей
 
 ### ✅ Улучшения UI/UX
@@ -334,4 +355,24 @@
 ### CI/CD
 - Исправлен workflow для надежной сборки на GitHub Actions
 - Теперь сборка должна проходить успешно без ошибок лицензий
+
+## [2025-01-08] - Релиз v0.2 с локальной сборкой
+
+### ✅ Релиз v0.2 создан
+- Собран release APK локально (app-release-unsigned.apk, 10.23 MB)
+- Релиз v0.2 создан на GitHub: https://github.com/Tombraider2006/holdemTT/releases/tag/v0.2
+- APK загружен в релиз через GitHub CLI
+- Использованы заметки к релизу из release-notes-v0.2.md
+
+### Локальная сборка
+- Настроены переменные окружения:
+  - JAVA_HOME: C:\Program Files\Android\Android Studio\jbr
+  - ANDROID_HOME: C:\Users\utoly\AppData\Local\Android\Sdk
+- Сборка выполнена командой: `gradlew.bat assembleRelease --no-daemon`
+- Сборка успешна, только предупреждения о deprecated API (Divider, statusBarColor)
+
+### Уроки
+- Release APK создается как app-release-unsigned.apk (без подписи)
+- Для добавления APK в релиз можно использовать GitHub CLI: `gh release create`
+- Локальная сборка работает корректно при правильной настройке JAVA_HOME и ANDROID_HOME
 
