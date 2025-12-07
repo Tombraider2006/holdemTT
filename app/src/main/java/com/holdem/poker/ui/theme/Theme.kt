@@ -27,7 +27,8 @@ fun TexasHoldemTheme(
         SideEffect {
             val window = (view.context as Activity).window
             window.statusBarColor = colorScheme.background.toArgb()
-            WindowCompat.getWindowInsetsController(window, view)?.isAppearanceLightStatusBars = false
+            val insetsController = WindowCompat.getWindowInsetsController(window, view)
+            insetsController?.isAppearanceLightStatusBars = false
         }
     }
 

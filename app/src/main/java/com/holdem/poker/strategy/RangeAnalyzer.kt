@@ -96,10 +96,10 @@ class RangeAnalyzer {
             average = avgStrength.toFloat(),
             maximum = maxStrength.toFloat(),
             minimum = minStrength.toFloat(),
-            distribution = strengths.groupBy { 
+            distribution = strengths.groupBy { strength ->
                 when {
-                    it >= 0.7 -> "Сильные"
-                    it >= 0.5 -> "Средние"
+                    strength >= 0.7 -> "Сильные"
+                    strength >= 0.5 -> "Средние"
                     else -> "Слабые"
                 }
             }.mapValues { it.value.size.toDouble() / strengths.size }
