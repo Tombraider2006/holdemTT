@@ -80,3 +80,35 @@ jobs:
         path: app/build/outputs/apk/release/app-release.apk
         retention-days: 30
         if-no-files-found: ignore
+    
+    - name: Upload APK to Release
+      if: github.event_name == 'release' && github.event.action == 'created'
+      uses: softprops/action-gh-release@v1
+      with:
+        files: |
+          app/build/outputs/apk/debug/app-debug.apk
+          app/build/outputs/apk/release/app-release.apk
+        draft: false
+        prerelease: false
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    
+    - name: Upload APK to Release (manual trigger)
+      if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main'
+      uses: softprops/action-gh-release@v1
+      with:
+        tag_name: v${{ github.run_number }}
+        name: Release v${{ github.run_number }}
+        body: |
+          Автоматический релиз из workflow run #${{ github.run_number }}
+          
+          ## Изменения
+          - Собран APK с последними изменениями
+          - Debug и Release версии
+        files: |
+          app/build/outputs/apk/debug/app-debug.apk
+          app/build/outputs/apk/release/app-release.apk
+        draft: false
+        prerelease: false
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
