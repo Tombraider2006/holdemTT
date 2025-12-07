@@ -90,6 +90,40 @@
 - Подсказки: "Подсказка", "Уверенность", "Вероятность", "Pot Odds"
 - Анализ оппонентов: "Анализ диапазона оппонента", "Сильные", "Средние", "Слабые"
 
+### GitHub Actions
+- Создан workflow для автоматической сборки APK
+- Добавлен gradle-wrapper.jar в репозиторий для надежной сборки
+- Настроена автоматическая загрузка gradle-wrapper.jar (fallback)
+- Добавлен кеш для ускорения сборки
+- Улучшена настройка Android SDK
+- APK доступны в разделе Actions → Artifacts
+- Создан скрипт для автоматического ожидания сборки и обновления релиза
+
+### Репозиторий и релиз
+- Репозиторий: https://github.com/Tombraider2006/holdemTT
+- Релиз v0.1 создан: https://github.com/Tombraider2006/holdemTT/releases/tag/v0.1
+- Workflow для сборки: https://github.com/Tombraider2006/holdemTT/actions
+
+### Локальная сборка
+- Создан скрипт `build-local.ps1` для автоматической сборки APK
+- Создан скрипт `setup-java.ps1` для настройки Java
+- Скрипты автоматически находят Java (включая JDK из Android Studio)
+
+### Очистка проекта
+- Удалены временные скрипты PowerShell (все действия выполняются через CLI команды)
+- Обновлен `.gitignore` для исключения временных файлов, артефактов и скриптов
+- Удалены директории сборки, кеши и временные файлы
+
+### Инструменты для тестирования
+- Установлен Android Platform Tools (ADB) для тестирования APK
+- Создана инструкция `INSTALL_ANDROID_TOOLS.md` по установке и использованию
+- ADB установлен в `C:\Android\platform-tools`
+
+### Релиз v0.1
+- Релиз v0.1 создан: https://github.com/Tombraider2006/holdemTT/releases/tag/v0.1
+- APK доступен в разделе Actions → Artifacts после успешной сборки
+- Для добавления APK в релиз: скачайте из Artifacts и загрузите через веб-интерфейс или CLI
+
 ### Источники
 - Репозиторий: https://github.com/jacobhyphenated/PokerServer
 - Язык: Java (адаптировано для Kotlin/Android)

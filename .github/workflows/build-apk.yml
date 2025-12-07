@@ -5,9 +5,9 @@ on:
     branches: [ main, master ]
   pull_request:
     branches: [ main, master ]
-  workflow_dispatch:  # Позволяет запускать вручную
+  workflow_dispatch:
   release:
-    types: [created]  # При создании релиза
+    types: [created]
 
 jobs:
   build:
@@ -22,6 +22,7 @@ jobs:
       with:
         java-version: '17'
         distribution: 'temurin'
+        cache: 'gradle'
         
     - name: Setup Android SDK
       uses: android-actions/setup-android@v3
@@ -29,31 +30,34 @@ jobs:
     - name: Setup Gradle Wrapper
       run: |
         if [ ! -f gradle/wrapper/gradle-wrapper.jar ]; then
+          echo "Downloading gradle-wrapper.jar..."
           mkdir -p gradle/wrapper
-          curl -L https://raw.githubusercontent.com/gradle/gradle/v8.2.0/gradle/wrapper/gradle-wrapper.jar -o gradle/wrapper/gradle-wrapper.jar
+          curl -L -f -o gradle/wrapper/gradle-wrapper.jar https://raw.githubusercontent.com/gradle/gradle/v8.2.0/gradle/wrapper/gradle-wrapper.jar
         fi
-        chmod +x gradlew || true
+        chmod +x gradlew
+        ls -la gradle/wrapper/ || true
+      
+    - name: Cache Gradle dependencies
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.gradle/caches
+          ~/.gradle/wrapper
+        key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+        restore-keys: |
+          ${{ runner.os }}-gradle-
       
     - name: Build debug APK
-      run: ./gradlew assembleDebug
-      
-    - name: Build release APK
-      run: ./gradlew assembleRelease
-      continue-on-error: true
+      run: ./gradlew assembleDebug --no-daemon --stacktrace
+      env:
+        ANDROID_HOME: ${{ env.ANDROID_HOME }}
+        ANDROID_SDK_ROOT: ${{ env.ANDROID_SDK_ROOT }}
       
     - name: Upload debug APK
       uses: actions/upload-artifact@v4
+      if: success()
       with:
         name: app-debug-apk
         path: app/build/outputs/apk/debug/app-debug.apk
         retention-days: 30
-        
-    - name: Upload release APK
-      if: success() || failure()
-      uses: actions/upload-artifact@v4
-      with:
-        name: app-release-apk
-        path: app/build/outputs/apk/release/app-release.apk
-        retention-days: 30
-        if-no-files-found: ignore
-
+        if-no-files-found: error

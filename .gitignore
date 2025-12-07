@@ -14,3 +14,21 @@
 .cxx
 local.properties
 
+# Временные файлы
+*.tmp
+*.log
+*.swp
+*.swo
+*~
+Thumbs.db
+
+# Артефакты сборки
+app-debug-apk/
+app-release-apk/
+*.apk
+!gradle/wrapper/gradle-wrapper.jar
+
+# Временные скрипты (не нужны в репозитории)
+*.ps1
+!gradlew.bat
+
