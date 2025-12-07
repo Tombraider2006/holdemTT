@@ -1,14 +1,11 @@
 package com.holdem.poker.ui.screen
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
-import androidx.compose.ui.platform.LocalConfiguration
-import androidx.compose.ui.unit.Dp
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -18,6 +15,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -28,9 +26,9 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.holdem.poker.audio.rememberSoundManager
 import com.holdem.poker.model.PlayerAction
-import com.holdem.poker.strategy.RangeAnalyzer
 import com.holdem.poker.ui.components.BettingHints
 import com.holdem.poker.ui.components.CardView
+import com.holdem.poker.ui.components.CardSize
 import com.holdem.poker.ui.components.OpponentRangeView
 import com.holdem.poker.ui.components.PlayerView
 import com.holdem.poker.ui.theme.GreenTable
@@ -43,11 +41,9 @@ fun GameScreen(
     viewModel: GameViewModel = viewModel(),
     onSettingsClick: () -> Unit = {}
 ) {
-    // Используем единое состояние UI с оптимизацией collectAsStateWithLifecycle
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val soundManager = rememberSoundManager()
     
-    // Извлекаем значения из uiState для удобства
     val players = uiState.players
     val gameState = uiState.gameState
     val communityCards = uiState.communityCards
@@ -60,21 +56,14 @@ fun GameScreen(
     val opponentRanges = uiState.opponentRanges
     val rangeStrengths = uiState.rangeStrengths
     
-    // Определяем ориентацию и размеры экрана
     val configuration = LocalConfiguration.current
-    val screenWidth = configuration.screenWidthDp.dp
-    val screenHeight = configuration.screenHeightDp.dp
-    val isPortrait = screenHeight > screenWidth
-    val isNarrowScreen = if (isPortrait) screenWidth < 400.dp else screenHeight < 400.dp
-    
-    // Адаптивные размеры в зависимости от ориентации
-    val cardSize = if (isPortrait) 40.dp else 60.dp
-    val cardHeight = if (isPortrait) 56.dp else 84.dp
-    val spacing = if (isPortrait) 8.dp else 12.dp
-    val buttonHeight = if (isPortrait) 44.dp else 56.dp
-    val bottomPadding = if (isPortrait) 160.dp else 200.dp
-    
+    val isPortrait = configuration.screenHeightDp > configuration.screenWidthDp
     val scrollState = rememberScrollState()
+    
+    // Адаптивные размеры
+    val cardSize = if (isPortrait) CardSize.SMALL else CardSize.MEDIUM
+    // Увеличенный отступ для кнопок (слайдер + кнопки могут быть высокими)
+    val bottomPadding = if (isPortrait) 220.dp else 280.dp
     
     Box(
         modifier = Modifier
@@ -89,7 +78,7 @@ fun GameScreen(
                 )
             )
     ) {
-        // Скроллируемый контент (без видимой полосы прокрутки)
+        // Основной контент
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -97,94 +86,18 @@ fun GameScreen(
                 .padding(bottom = bottomPadding),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Обработка ошибок с улучшенным дизайном
-            uiState.error?.let { error ->
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                    colors = CardDefaults.cardColors(
-                        containerColor = Color.Red.copy(alpha = 0.95f)
-                    ),
-                    shape = RoundedCornerShape(12.dp),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
-                ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            modifier = Modifier.weight(1f)
-                        ) {
-                            Text("⚠️", fontSize = 20.sp)
-                            Text(
-                                text = error,
-                                color = Color.White,
-                                fontWeight = FontWeight.Medium
-                            )
-                        }
-                        TextButton(onClick = { viewModel.clearError() }) {
-                            Text("✕", color = Color.White, fontSize = 18.sp)
-                        }
-                    }
-                }
-            }
-            
-            // Обработка сообщений с улучшенным дизайном
-            uiState.message?.let { message ->
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp),
-                    colors = CardDefaults.cardColors(
-                        containerColor = Gold.copy(alpha = 0.95f)
-                    ),
-                    shape = RoundedCornerShape(12.dp),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
-                ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            modifier = Modifier.weight(1f)
-                        ) {
-                            Text("ℹ️", fontSize = 20.sp)
-                            Text(
-                                text = message,
-                                color = Color.Black,
-                                fontWeight = FontWeight.Medium
-                            )
-                        }
-                        TextButton(onClick = { viewModel.clearMessage() }) {
-                            Text("✕", color = Color.Black, fontSize = 18.sp)
-                        }
-                    }
-                }
-            }
-            
-            // Кнопка настроек в правом верхнем углу
+            // Верхняя панель с настройками
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(8.dp),
+                    .padding(12.dp),
                 horizontalArrangement = Arrangement.End
             ) {
                 IconButton(
                     onClick = onSettingsClick,
                     modifier = Modifier
                         .background(
-                            color = Color(0xFF1E3A5F).copy(alpha = 0.8f),
+                            color = Color.Black.copy(alpha = 0.3f),
                             shape = RoundedCornerShape(8.dp)
                         )
                 ) {
@@ -192,163 +105,196 @@ fun GameScreen(
                 }
             }
             
-            // Индикатор загрузки
-            if (uiState.isLoading) {
-                CircularProgressIndicator(
-                    modifier = Modifier.padding(16.dp),
-                    color = Gold
-                )
+            // Сообщения об ошибках
+            uiState.error?.let { error ->
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = Color.Red.copy(alpha = 0.9f)
+                    ),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(12.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "⚠️ $error",
+                            color = Color.White,
+                            fontWeight = FontWeight.Medium
+                        )
+                        TextButton(onClick = { viewModel.clearError() }) {
+                            Text("✕", color = Color.White)
+                        }
+                    }
+                }
             }
-            Spacer(modifier = Modifier.height(12.dp))
+            
+            // Сообщения
+            uiState.message?.let { message ->
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = Gold.copy(alpha = 0.9f)
+                    ),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(12.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "ℹ️ $message",
+                            color = Color.Black,
+                            fontWeight = FontWeight.Medium
+                        )
+                        TextButton(onClick = { viewModel.clearMessage() }) {
+                            Text("✕", color = Color.Black)
+                        }
+                    }
+                }
+            }
+            
+            Spacer(modifier = Modifier.height(8.dp))
             
             // Верхние игроки (AI)
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 4.dp),
-                horizontalArrangement = Arrangement.SpaceEvenly
-            ) {
-                if (players.size > 2) {
-                    PlayerView(
-                        player = players[1],
-                        isCurrentPlayer = currentPlayerIndex == 1,
-                        modifier = Modifier.weight(1f)
-                    )
+            if (players.size > 2) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 8.dp),
+                    horizontalArrangement = Arrangement.SpaceEvenly
+                ) {
+                    if (players.size > 2) {
+                        PlayerView(
+                            player = players[1],
+                            isCurrentPlayer = currentPlayerIndex == 1,
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                    if (players.size > 3) {
+                        PlayerView(
+                            player = players[2],
+                            isCurrentPlayer = currentPlayerIndex == 2,
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
                 }
-                if (players.size > 3) {
-                    PlayerView(
-                        player = players[2],
-                        isCurrentPlayer = currentPlayerIndex == 2,
-                        modifier = Modifier.weight(1f)
-                    )
-                }
+                Spacer(modifier = Modifier.height(12.dp))
             }
             
-            Spacer(modifier = Modifier.height(12.dp))
-            
-            // Общие карты с улучшенным дизайном
+            // Общие карты на столе
             Column(
-                modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                modifier = Modifier.padding(vertical = 16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
                     text = "Общие карты",
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.Medium,
-                    color = Color.White.copy(alpha = 0.7f),
-                    modifier = Modifier.padding(bottom = 8.dp)
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White,
+                    modifier = Modifier.padding(bottom = 12.dp)
                 )
                 Row(
-                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     communityCards.forEach { card ->
-                        CardView(card = card, isFaceUp = true)
+                        CardView(
+                            card = card,
+                            isFaceUp = true,
+                            size = cardSize
+                        )
                     }
-                    // Показываем пустые места для будущих карт
                     repeat(5 - communityCards.size) {
-                        CardView(card = null, isFaceUp = false)
+                        CardView(
+                            card = null,
+                            isFaceUp = false,
+                            size = cardSize
+                        )
                     }
                 }
             }
             
-            // Pot и информация о ставках с улучшенным дизайном
-            Column(
-                modifier = Modifier.padding(16.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
+            // Pot и текущая ставка
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = Color.Black.copy(alpha = 0.4f)
+                ),
+                shape = RoundedCornerShape(16.dp)
             ) {
-                Box(
-                    modifier = Modifier
-                        .background(
-                            brush = Brush.radialGradient(
-                                colors = listOf(
-                                    Gold.copy(alpha = 0.4f),
-                                    Gold.copy(alpha = 0.2f)
-                                )
-                            ),
-                            shape = RoundedCornerShape(16.dp)
-                        )
-                        .border(
-                            width = 2.dp,
-                            brush = Brush.linearGradient(
-                                colors = listOf(
-                                    Gold.copy(alpha = 0.8f),
-                                    Gold.copy(alpha = 0.4f)
-                                )
-                            ),
-                            shape = RoundedCornerShape(16.dp)
-                        )
-                        .padding(horizontal = 28.dp, vertical = 16.dp)
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Text("💰", fontSize = 24.sp)
+                        Text(
+                            text = "Pot: $pot",
+                            fontSize = 24.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Gold
+                        )
+                    }
+                    
+                    if (currentBet > 0) {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
                         ) {
+                            Text("📊", fontSize = 16.sp)
                             Text(
-                                text = "💰",
-                                fontSize = 28.sp
-                            )
-                            Text(
-                                text = "Pot: $pot",
-                                fontSize = 28.sp,
-                                fontWeight = FontWeight.ExtraBold,
-                                color = Color.White,
-                                letterSpacing = 1.sp
+                                text = "Текущая ставка: $currentBet",
+                                fontSize = 18.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = Color.White
                             )
                         }
-                        if (currentBet > 0) {
-                            Spacer(modifier = Modifier.height(8.dp))
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(6.dp)
-                            ) {
-                                Text(
-                                    text = "📊",
-                                    fontSize = 16.sp
-                                )
-                                Text(
-                                    text = "Текущая ставка: $currentBet",
-                                    fontSize = 18.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = Color.White.copy(alpha = 0.9f)
-                                )
-                            }
-                        }
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Row(
-                            horizontalArrangement = Arrangement.spacedBy(12.dp),
-                            modifier = Modifier
-                                .background(
-                                    color = Color.Black.copy(alpha = 0.2f),
-                                    shape = RoundedCornerShape(8.dp)
-                                )
-                                .padding(horizontal = 12.dp, vertical = 6.dp)
-                        ) {
-                            Text(
-                                text = "SB: $smallBlind",
-                                fontSize = 13.sp,
-                                fontWeight = FontWeight.Medium,
-                                color = Color.White.copy(alpha = 0.8f)
+                    }
+                    
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        modifier = Modifier
+                            .background(
+                                color = Color.White.copy(alpha = 0.1f),
+                                shape = RoundedCornerShape(8.dp)
                             )
-                            Text(
-                                text = "•",
-                                fontSize = 13.sp,
-                                color = Color.White.copy(alpha = 0.5f)
-                            )
-                            Text(
-                                text = "BB: $bigBlind",
-                                fontSize = 13.sp,
-                                fontWeight = FontWeight.Medium,
-                                color = Color.White.copy(alpha = 0.8f)
-                            )
-                        }
+                            .padding(horizontal = 12.dp, vertical = 6.dp)
+                    ) {
+                        Text(
+                            text = "SB: $smallBlind",
+                            fontSize = 14.sp,
+                            color = Color.White.copy(alpha = 0.9f)
+                        )
+                        Text("•", color = Color.White.copy(alpha = 0.5f))
+                        Text(
+                            text = "BB: $bigBlind",
+                            fontSize = 14.sp,
+                            color = Color.White.copy(alpha = 0.9f)
+                        )
                     }
                 }
             }
             
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(16.dp))
             
-            // Нижний игрок (игрок)
+            // Нижние игроки
             if (players.isNotEmpty()) {
                 PlayerView(
                     player = players[0],
@@ -358,6 +304,7 @@ fun GameScreen(
             }
             
             if (players.size > 3) {
+                Spacer(modifier = Modifier.height(8.dp))
                 PlayerView(
                     player = players[3],
                     isCurrentPlayer = currentPlayerIndex == 3,
@@ -365,14 +312,41 @@ fun GameScreen(
                 )
             }
             
-            Spacer(modifier = Modifier.height(12.dp))
-            
-            // Подсказки по ставкам
-            if (currentPlayerIndex == 0 && players.isNotEmpty() && !players[0].isFolded) {
+            // Подсказки по ставкам - показываем СРАЗУ ПОСЛЕ POT, чтобы были заметны
+            val isPlayerTurn = currentPlayerIndex == 0 && players.isNotEmpty() && !players[0].isFolded
+            if (isPlayerTurn) {
+                Spacer(modifier = Modifier.height(12.dp))
                 bettingRecommendation?.let { recommendation ->
                     BettingHints(recommendation = recommendation)
+                } ?: run {
+                    // Показываем заглушку, если подсказка еще не готова
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = Color(0xFF1E3A5F).copy(alpha = 0.7f)
+                        ),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(12.dp),
+                            horizontalArrangement = Arrangement.Center,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = "💡 Подсказка загружается...",
+                                fontSize = 14.sp,
+                                color = Color.White.copy(alpha = 0.8f)
+                            )
+                        }
+                    }
                 }
             }
+            
+            Spacer(modifier = Modifier.height(16.dp))
             
             // Анализ диапазонов оппонентов
             if (opponentRanges.isNotEmpty()) {
@@ -404,11 +378,10 @@ fun GameScreen(
                 }
             }
             
-            // Дополнительный отступ внизу для скроллинга
             Spacer(modifier = Modifier.height(20.dp))
         }
         
-        // Фиксированные кнопки действий внизу экрана
+        // Фиксированные кнопки действий внизу
         if (currentPlayerIndex == 0 && players.isNotEmpty() && !players[0].isFolded) {
             Box(
                 modifier = Modifier
@@ -423,7 +396,7 @@ fun GameScreen(
                             )
                         )
                     )
-                    .padding(horizontal = 16.dp, vertical = 8.dp)
+                    .padding(horizontal = 12.dp, vertical = 8.dp)
             ) {
                 ActionButtons(
                     viewModel = viewModel,
@@ -451,18 +424,18 @@ fun ActionButtons(
         modifier = Modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(6.dp)
     ) {
-        // Слайдер для выбора суммы ставки (drag and drop) - компактная версия
+        // Слайдер для выбора суммы ставки
         if (currentBet == 0 || currentBet == playerCurrentBet) {
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 colors = CardDefaults.cardColors(
-                    containerColor = Color(0xFF1E3A5F).copy(alpha = 0.8f)
+                    containerColor = Color.Black.copy(alpha = 0.5f)
                 ),
                 shape = RoundedCornerShape(8.dp)
             ) {
                 Column(
-                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
-                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                    verticalArrangement = Arrangement.spacedBy(3.dp)
                 ) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -475,14 +448,15 @@ fun ActionButtons(
                             fontWeight = FontWeight.Bold,
                             color = Color.White
                         )
-                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                             Text(
-                                text = "Мин: $minBet",
+                                text = "$minBet",
                                 fontSize = 9.sp,
                                 color = Color.White.copy(alpha = 0.7f)
                             )
+                            Text("|", fontSize = 9.sp, color = Color.White.copy(alpha = 0.5f))
                             Text(
-                                text = "Макс: $maxBet",
+                                text = "$maxBet",
                                 fontSize = 9.sp,
                                 color = Color.White.copy(alpha = 0.7f)
                             )
@@ -503,193 +477,104 @@ fun ActionButtons(
             }
         }
         
+        // Кнопки действий
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-        // Кнопка Сбросить
-        Button(
-            onClick = { viewModel.playerAction(PlayerAction.FOLD) },
-            colors = ButtonDefaults.buttonColors(
-                containerColor = Color(0xFFDC3545)
-            ),
-            modifier = Modifier
-                .weight(1f)
-                .heightIn(min = 48.dp, max = 56.dp),
-            shape = RoundedCornerShape(12.dp),
-            elevation = ButtonDefaults.buttonElevation(
-                defaultElevation = 4.dp,
-                pressedElevation = 2.dp
-            )
-        ) {
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(2.dp)
-            ) {
-                Text("✕", fontSize = 16.sp)
-                Text(
-                    "Сбросить",
-                    fontSize = 11.sp,
-                    fontWeight = FontWeight.Bold
-                )
-            }
-        }
-        
-        if (currentBet == 0 || currentBet == playerCurrentBet) {
-            // Кнопка Чек
+            // Сбросить
             Button(
-                onClick = { viewModel.playerAction(PlayerAction.CHECK) },
+                onClick = { viewModel.playerAction(PlayerAction.FOLD) },
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color(0xFFDC3545)
+                ),
                 modifier = Modifier
                     .weight(1f)
-                    .height(56.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Color(0xFF6C757D)
-                ),
-                shape = RoundedCornerShape(12.dp),
-                elevation = ButtonDefaults.buttonElevation(
-                    defaultElevation = 4.dp,
-                    pressedElevation = 2.dp
-                )
+                    .height(44.dp),
+                shape = RoundedCornerShape(10.dp)
             ) {
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(2.dp)
+                Text("❌ Сбросить", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+            }
+            
+            if (currentBet == 0 || currentBet == playerCurrentBet) {
+                // Чек
+                Button(
+                    onClick = { viewModel.playerAction(PlayerAction.CHECK) },
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(44.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFF6C757D)
+                    ),
+                    shape = RoundedCornerShape(10.dp)
                 ) {
-                    Text("✓", fontSize = 16.sp)
-                    Text(
-                        "Чек",
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.Bold
-                    )
+                    Text("✅ Чек", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                }
+                // Ставка
+                Button(
+                    onClick = { viewModel.playerAction(PlayerAction.BET, betAmount) },
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(44.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFF2196F3)
+                    ),
+                    shape = RoundedCornerShape(10.dp)
+                ) {
+                    Text("💰 Ставка", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                }
+            } else {
+                val callAmount = currentBet - playerCurrentBet
+                // Колл (уравнять ставку)
+                Button(
+                    onClick = { viewModel.playerAction(PlayerAction.CALL) },
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(44.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFF4CAF50)
+                    ),
+                    shape = RoundedCornerShape(10.dp)
+                ) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text("⚖️ Уравнять", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                        Text("$callAmount", fontSize = 8.sp)
+                    }
+                }
+                // Рейз
+                Button(
+                    onClick = { 
+                        val raiseAmount = maxOf(currentBet * 2, betAmount)
+                        viewModel.playerAction(PlayerAction.RAISE, raiseAmount) 
+                    },
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(44.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFFFF9800)
+                    ),
+                    shape = RoundedCornerShape(10.dp)
+                ) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text("⬆️ Рейз", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                        Text("до ${currentBet * 2}", fontSize = 8.sp)
+                    }
                 }
             }
-            // Кнопка Ставка
+            
+            // Олл-ин
             Button(
-                onClick = { viewModel.playerAction(PlayerAction.BET, betAmount) },
+                onClick = { viewModel.playerAction(PlayerAction.ALL_IN) },
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Gold
+                ),
                 modifier = Modifier
                     .weight(1f)
-                    .height(56.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Color(0xFF2196F3)
-                ),
-                shape = RoundedCornerShape(12.dp),
-                elevation = ButtonDefaults.buttonElevation(
-                    defaultElevation = 4.dp,
-                    pressedElevation = 2.dp
-                )
+                    .height(44.dp),
+                shape = RoundedCornerShape(10.dp)
             ) {
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(2.dp)
-                ) {
-                    Text("💰", fontSize = 16.sp)
-                    Text(
-                        "Ставка",
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
+                Text("💎 Олл-ин", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color.Black)
             }
-        } else {
-            val callAmount = currentBet - playerCurrentBet
-            // Кнопка Колл
-            Button(
-                onClick = { viewModel.playerAction(PlayerAction.CALL) },
-                modifier = Modifier
-                    .weight(1f)
-                    .height(56.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Color(0xFF4CAF50)
-                ),
-                shape = RoundedCornerShape(12.dp),
-                elevation = ButtonDefaults.buttonElevation(
-                    defaultElevation = 4.dp,
-                    pressedElevation = 2.dp
-                )
-            ) {
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(2.dp)
-                ) {
-                    Text("📞", fontSize = 16.sp)
-                    Text(
-                        "Колл",
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                    Text(
-                        text = "$callAmount",
-                        fontSize = 9.sp,
-                        color = Color.White.copy(alpha = 0.9f)
-                    )
-                }
-            }
-            // Кнопка Рейз
-            Button(
-                onClick = { 
-                    val raiseAmount = maxOf(currentBet * 2, betAmount)
-                    viewModel.playerAction(PlayerAction.RAISE, raiseAmount) 
-                },
-                modifier = Modifier
-                    .weight(1f)
-                    .height(56.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Color(0xFFFF9800)
-                ),
-                shape = RoundedCornerShape(12.dp),
-                elevation = ButtonDefaults.buttonElevation(
-                    defaultElevation = 4.dp,
-                    pressedElevation = 2.dp
-                )
-            ) {
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(2.dp)
-                ) {
-                    Text("📈", fontSize = 16.sp)
-                    Text(
-                        "Рейз",
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                    Text(
-                        text = "до ${currentBet * 2}",
-                        fontSize = 9.sp,
-                        color = Color.White.copy(alpha = 0.9f)
-                    )
-                }
-            }
-        }
-        
-        // Кнопка Олл-ин
-        Button(
-            onClick = { viewModel.playerAction(PlayerAction.ALL_IN) },
-            colors = ButtonDefaults.buttonColors(
-                containerColor = Gold
-            ),
-            modifier = Modifier
-                .weight(1f)
-                .heightIn(min = 48.dp, max = 56.dp),
-            shape = RoundedCornerShape(12.dp),
-            elevation = ButtonDefaults.buttonElevation(
-                defaultElevation = 6.dp,
-                pressedElevation = 3.dp
-            )
-        ) {
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(2.dp)
-            ) {
-                Text("🔥", fontSize = 16.sp)
-                Text(
-                    "Олл-ин",
-                    fontSize = 11.sp,
-                    fontWeight = FontWeight.ExtraBold,
-                    color = Color.Black
-                )
-            }
-        }
         }
     }
 }
-

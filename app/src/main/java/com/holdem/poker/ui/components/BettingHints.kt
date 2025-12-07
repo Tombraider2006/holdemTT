@@ -26,7 +26,7 @@ fun BettingHints(
     Card(
         modifier = modifier
             .fillMaxWidth()
-            .padding(8.dp),
+            .padding(horizontal = 16.dp, vertical = 8.dp),
         colors = CardDefaults.cardColors(
             containerColor = Color(0xFF1E3A5F).copy(alpha = 0.95f)
         ),

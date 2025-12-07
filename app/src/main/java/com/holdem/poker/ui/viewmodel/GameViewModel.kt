@@ -197,6 +197,8 @@ class GameViewModel(
                     }
                     _players.update { it.toList() }
                     updateGameState()
+                    // Обновляем подсказки после действия игрока
+                    updateBettingRecommendation()
                     processAITurns()
                 }
             } catch (e: Exception) {
