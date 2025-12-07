@@ -38,7 +38,8 @@ class RangeAnalyzer {
         range = adjustRangeByPosition(range, position)
         
         val strength = calculateAverageStrength(range, communityCards)
-        val probability = calculateRangeProbability(range)
+        val handRange = HandRange(range, 0.0, strength)
+        val probability = calculateRangeProbability(handRange)
         
         return HandRange(range, probability, strength)
     }

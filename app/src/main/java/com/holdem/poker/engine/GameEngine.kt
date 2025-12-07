@@ -12,6 +12,9 @@ class GameEngine(
     private val deck = Deck()
     private val evaluator = PokerHandEvaluator()
     
+    var players = mutableListOf<Player>()
+        private set
+    
     var gameState = GameState.WAITING
         private set
     
@@ -35,6 +38,10 @@ class GameEngine(
         if (players.size < 2) {
             throw IllegalArgumentException("Нужно минимум 2 игрока")
         }
+        
+        // Сохраняем игроков
+        this.players.clear()
+        this.players.addAll(players)
         
         // Сброс состояния
         deck.reset()

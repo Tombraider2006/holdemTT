@@ -219,6 +219,34 @@
 - Удалены автоматические сборки при каждом push
 - Workflow автоматически создает релиз с APK после успешной сборки
 
+## [2025-01-XX] - Локальная сборка и исправление ошибок
+
+### ✅ Исправлено - Двойные тени в Card компонентах
+- Удален модификатор `.shadow()` из Card компонентов в BettingHints, OpponentRangeView и GameScreen
+- Оставлен только параметр `elevation` для единообразного отображения теней
+- Удалены неиспользуемые импорты `androidx.compose.ui.draw.shadow`
+
+### ✅ Локальная сборка успешна
+- Установлен JDK 17 (Microsoft OpenJDK 17.0.17)
+- Установлен Android SDK Platform 35 и Build-Tools 35.0.0
+- Приняты все лицензии Android SDK
+- Настроены переменные окружения JAVA_HOME и ANDROID_HOME
+- Обновлен compileSdk до 35 для совместимости с зависимостями
+- Добавлен Compose Compiler Gradle Plugin для Kotlin 2.0+
+- Удален устаревший блок `composeOptions` из build.gradle.kts
+
+### ✅ Исправлены ошибки компиляции
+- **GameEngine.kt** - добавлено свойство `players` для хранения списка игроков
+- **GameRepository.kt** - исправлен доступ к `gameEngine.players`
+- **RangeAnalyzer.kt** - исправлен вызов `calculateRangeProbability` с правильным типом
+- **GameUiState.kt** - исправлена проблема smart cast в `isPlayerTurn` через локальную переменную
+- **GameViewModel.kt** - исправлен `combine` для 14 StateFlow через вложенные combine (так как стандартный combine поддерживает максимум 5-6 параметров)
+
+### Результат
+- ✅ APK успешно собран: `app/build/outputs/apk/debug/app-debug.apk`
+- ✅ Все ошибки компиляции исправлены
+- ✅ Только предупреждения о deprecated API (Divider, statusBarColor)
+
 ## [2025-01-XX] - Улучшение визуальной составляющей
 
 ### ✅ Улучшения UI/UX

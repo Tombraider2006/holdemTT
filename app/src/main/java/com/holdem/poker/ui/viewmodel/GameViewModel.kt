@@ -48,24 +48,43 @@ class GameViewModel(
     private val _error = MutableStateFlow<String?>(null)
     
     // Единое состояние UI с оптимизацией WhileUiSubscribed
+    // Используем вложенные combine, так как combine поддерживает максимум 5-6 параметров
     val uiState: StateFlow<GameUiState> = combine(
-        _players,
-        _gameState,
-        _communityCards,
-        _pot,
-        _currentPlayerIndex,
-        _currentBet,
-        _smallBlind,
-        _bigBlind,
-        _bettingRecommendation,
-        _opponentRanges,
-        _rangeStrengths,
-        _message,
-        _isLoading,
-        _error
-    ) { players, gameState, communityCards, pot, currentPlayerIndex, 
-        currentBet, smallBlind, bigBlind, bettingRecommendation, 
-        opponentRanges, rangeStrengths, message, isLoading, error ->
+        combine(
+            _players,
+            _gameState,
+            _communityCards,
+            _pot,
+            _currentPlayerIndex
+        ) { players, gameState, communityCards, pot, currentPlayerIndex ->
+            Triple(Triple(players, gameState, communityCards), Pair(pot, currentPlayerIndex), Unit)
+        },
+        combine(
+            _currentBet,
+            _smallBlind,
+            _bigBlind,
+            _bettingRecommendation,
+            _opponentRanges
+        ) { currentBet, smallBlind, bigBlind, bettingRecommendation, opponentRanges ->
+            Triple(currentBet, smallBlind, Pair(bigBlind, Pair(bettingRecommendation, opponentRanges)))
+        },
+        combine(
+            _rangeStrengths,
+            _message,
+            _isLoading,
+            _error
+        ) { rangeStrengths, message, isLoading, error ->
+            Pair(Pair(rangeStrengths, message), Pair(isLoading, error))
+        }
+    ) { gameData, bettingData, uiData ->
+        val (players, gameState, communityCards) = gameData.first
+        val (pot, currentPlayerIndex) = gameData.second
+        val (currentBet, smallBlind, bigBlindData) = bettingData
+        val (bigBlind, recommendationData) = bigBlindData
+        val (bettingRecommendation, opponentRanges) = recommendationData
+        val (rangeStrengths, message) = uiData.first
+        val (isLoading, error) = uiData.second
+        
         GameUiState(
             players = players,
             gameState = gameState,

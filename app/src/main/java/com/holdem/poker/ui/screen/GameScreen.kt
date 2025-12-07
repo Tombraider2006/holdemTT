@@ -9,7 +9,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
@@ -68,17 +67,12 @@ fun GameScreen(viewModel: GameViewModel = viewModel()) {
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(16.dp)
-                        .shadow(
-                            elevation = 8.dp,
-                            shape = RoundedCornerShape(12.dp),
-                            spotColor = Color.Red.copy(alpha = 0.5f)
-                        ),
+                        .padding(16.dp),
                     colors = CardDefaults.cardColors(
                         containerColor = Color.Red.copy(alpha = 0.95f)
                     ),
                     shape = RoundedCornerShape(12.dp),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+                    elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
                 ) {
                     Row(
                         modifier = Modifier
@@ -111,17 +105,12 @@ fun GameScreen(viewModel: GameViewModel = viewModel()) {
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 16.dp)
-                        .shadow(
-                            elevation = 8.dp,
-                            shape = RoundedCornerShape(12.dp),
-                            spotColor = Gold.copy(alpha = 0.5f)
-                        ),
+                        .padding(horizontal = 16.dp),
                     colors = CardDefaults.cardColors(
                         containerColor = Gold.copy(alpha = 0.95f)
                     ),
                     shape = RoundedCornerShape(12.dp),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+                    elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
                 ) {
                     Row(
                         modifier = Modifier

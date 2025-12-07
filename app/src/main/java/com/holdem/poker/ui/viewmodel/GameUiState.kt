@@ -36,7 +36,10 @@ data class GameUiState(
      * Является ли текущий игрок пользователем
      */
     val isPlayerTurn: Boolean
-        get() = currentPlayer?.id == "player1" && !currentPlayer.isFolded
+        get() {
+            val player = currentPlayer
+            return player?.id == "player1" && !player.isFolded
+        }
     
     /**
      * Можно ли делать ставку
