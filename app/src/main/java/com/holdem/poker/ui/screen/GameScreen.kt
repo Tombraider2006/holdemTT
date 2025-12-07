@@ -3,10 +3,15 @@ package com.holdem.poker.ui.screen
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
@@ -16,6 +21,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.holdem.poker.audio.rememberSoundManager
 import com.holdem.poker.model.PlayerAction
 import com.holdem.poker.strategy.RangeAnalyzer
 import com.holdem.poker.ui.components.BettingHints
@@ -25,11 +31,16 @@ import com.holdem.poker.ui.components.PlayerView
 import com.holdem.poker.ui.theme.GreenTable
 import com.holdem.poker.ui.theme.Gold
 import com.holdem.poker.ui.viewmodel.GameViewModel
+import kotlin.math.roundToInt
 
 @Composable
-fun GameScreen(viewModel: GameViewModel = viewModel()) {
+fun GameScreen(
+    viewModel: GameViewModel = viewModel(),
+    onSettingsClick: () -> Unit = {}
+) {
     // Используем единое состояние UI с оптимизацией collectAsStateWithLifecycle
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val soundManager = rememberSoundManager()
     
     // Извлекаем значения из uiState для удобства
     val players = uiState.players
@@ -57,9 +68,12 @@ fun GameScreen(viewModel: GameViewModel = viewModel()) {
                 )
             )
     ) {
-        // Игровой стол
+        // Скроллируемый контент
         Column(
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(bottom = 80.dp), // Отступ для фиксированных кнопок
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             // Обработка ошибок с улучшенным дизайном
@@ -138,6 +152,25 @@ fun GameScreen(viewModel: GameViewModel = viewModel()) {
                 }
             }
             
+            // Кнопка настроек в правом верхнем углу
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(8.dp),
+                horizontalArrangement = Arrangement.End
+            ) {
+                IconButton(
+                    onClick = onSettingsClick,
+                    modifier = Modifier
+                        .background(
+                            color = Color(0xFF1E3A5F).copy(alpha = 0.8f),
+                            shape = RoundedCornerShape(8.dp)
+                        )
+                ) {
+                    Text("⚙️", fontSize = 20.sp)
+                }
+            }
+            
             // Индикатор загрузки
             if (uiState.isLoading) {
                 CircularProgressIndicator(
@@ -145,11 +178,13 @@ fun GameScreen(viewModel: GameViewModel = viewModel()) {
                     color = Gold
                 )
             }
-            Spacer(modifier = Modifier.height(20.dp))
+            Spacer(modifier = Modifier.height(12.dp))
             
             // Верхние игроки (AI)
             Row(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 4.dp),
                 horizontalArrangement = Arrangement.SpaceEvenly
             ) {
                 if (players.size > 2) {
@@ -168,11 +203,11 @@ fun GameScreen(viewModel: GameViewModel = viewModel()) {
                 }
             }
             
-            Spacer(modifier = Modifier.height(20.dp))
+            Spacer(modifier = Modifier.height(12.dp))
             
             // Общие карты с улучшенным дизайном
             Column(
-                modifier = Modifier.padding(16.dp),
+                modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
@@ -290,7 +325,7 @@ fun GameScreen(viewModel: GameViewModel = viewModel()) {
                 }
             }
             
-            Spacer(modifier = Modifier.height(20.dp))
+            Spacer(modifier = Modifier.height(12.dp))
             
             // Нижний игрок (игрок)
             if (players.isNotEmpty()) {
@@ -309,7 +344,7 @@ fun GameScreen(viewModel: GameViewModel = viewModel()) {
                 )
             }
             
-            Spacer(modifier = Modifier.height(20.dp))
+            Spacer(modifier = Modifier.height(12.dp))
             
             // Подсказки по ставкам
             if (currentPlayerIndex == 0 && players.isNotEmpty() && !players[0].isFolded) {
@@ -348,8 +383,26 @@ fun GameScreen(viewModel: GameViewModel = viewModel()) {
                 }
             }
             
-            // Кнопки действий
-            if (currentPlayerIndex == 0 && players.isNotEmpty() && !players[0].isFolded) {
+            // Дополнительный отступ внизу для скроллинга
+            Spacer(modifier = Modifier.height(20.dp))
+        }
+        
+        // Фиксированные кнопки действий внизу экрана
+        if (currentPlayerIndex == 0 && players.isNotEmpty() && !players[0].isFolded) {
+            Box(
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .fillMaxWidth()
+                    .background(
+                        brush = Brush.verticalGradient(
+                            colors = listOf(
+                                Color.Transparent,
+                                GreenTable.copy(alpha = 0.95f)
+                            )
+                        )
+                    )
+                    .padding(horizontal = 16.dp, vertical = 12.dp)
+            ) {
                 ActionButtons(
                     viewModel = viewModel,
                     currentBet = currentBet,
@@ -368,12 +421,67 @@ fun ActionButtons(
     playerChips: Int,
     playerCurrentBet: Int
 ) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 12.dp),
-        horizontalArrangement = Arrangement.spacedBy(10.dp)
+    var betAmount by remember { mutableStateOf(50) }
+    val minBet = if (currentBet > 0) currentBet * 2 else 20
+    val maxBet = playerChips
+    
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
+        // Слайдер для выбора суммы ставки (drag and drop)
+        if (currentBet == 0 || currentBet == playerCurrentBet) {
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(
+                    containerColor = Color(0xFF1E3A5F).copy(alpha = 0.8f)
+                ),
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Column(
+                    modifier = Modifier.padding(12.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Text(
+                        text = "💰 Сумма ставки: $betAmount",
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White
+                    )
+                    Slider(
+                        value = betAmount.toFloat(),
+                        onValueChange = { betAmount = it.roundToInt().coerceIn(minBet, maxBet) },
+                        valueRange = minBet.toFloat()..maxBet.toFloat(),
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = SliderDefaults.colors(
+                            thumbColor = Gold,
+                            activeTrackColor = Gold,
+                            inactiveTrackColor = Color.White.copy(alpha = 0.3f)
+                        )
+                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(
+                            text = "Мин: $minBet",
+                            fontSize = 10.sp,
+                            color = Color.White.copy(alpha = 0.7f)
+                        )
+                        Text(
+                            text = "Макс: $maxBet",
+                            fontSize = 10.sp,
+                            color = Color.White.copy(alpha = 0.7f)
+                        )
+                    }
+                }
+            }
+        }
+        
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
         // Кнопка Сбросить
         Button(
             onClick = { viewModel.playerAction(PlayerAction.FOLD) },
@@ -382,7 +490,7 @@ fun ActionButtons(
             ),
             modifier = Modifier
                 .weight(1f)
-                .height(56.dp),
+                .heightIn(min = 48.dp, max = 56.dp),
             shape = RoundedCornerShape(12.dp),
             elevation = ButtonDefaults.buttonElevation(
                 defaultElevation = 4.dp,
@@ -393,10 +501,10 @@ fun ActionButtons(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(2.dp)
             ) {
-                Text("✕", fontSize = 18.sp)
+                Text("✕", fontSize = 16.sp)
                 Text(
                     "Сбросить",
-                    fontSize = 12.sp,
+                    fontSize = 11.sp,
                     fontWeight = FontWeight.Bold
                 )
             }
@@ -422,17 +530,17 @@ fun ActionButtons(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.spacedBy(2.dp)
                 ) {
-                    Text("✓", fontSize = 18.sp)
+                    Text("✓", fontSize = 16.sp)
                     Text(
                         "Чек",
-                        fontSize = 12.sp,
+                        fontSize = 11.sp,
                         fontWeight = FontWeight.Bold
                     )
                 }
             }
             // Кнопка Ставка
             Button(
-                onClick = { viewModel.playerAction(PlayerAction.BET, 50) },
+                onClick = { viewModel.playerAction(PlayerAction.BET, betAmount) },
                 modifier = Modifier
                     .weight(1f)
                     .height(56.dp),
@@ -449,10 +557,10 @@ fun ActionButtons(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.spacedBy(2.dp)
                 ) {
-                    Text("💰", fontSize = 18.sp)
+                    Text("💰", fontSize = 16.sp)
                     Text(
                         "Ставка",
-                        fontSize = 12.sp,
+                        fontSize = 11.sp,
                         fontWeight = FontWeight.Bold
                     )
                 }
@@ -478,22 +586,25 @@ fun ActionButtons(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.spacedBy(2.dp)
                 ) {
-                    Text("📞", fontSize = 18.sp)
+                    Text("📞", fontSize = 16.sp)
                     Text(
                         "Колл",
-                        fontSize = 12.sp,
+                        fontSize = 11.sp,
                         fontWeight = FontWeight.Bold
                     )
                     Text(
                         text = "$callAmount",
-                        fontSize = 10.sp,
+                        fontSize = 9.sp,
                         color = Color.White.copy(alpha = 0.9f)
                     )
                 }
             }
             // Кнопка Рейз
             Button(
-                onClick = { viewModel.playerAction(PlayerAction.RAISE, currentBet * 2) },
+                onClick = { 
+                    val raiseAmount = maxOf(currentBet * 2, betAmount)
+                    viewModel.playerAction(PlayerAction.RAISE, raiseAmount) 
+                },
                 modifier = Modifier
                     .weight(1f)
                     .height(56.dp),
@@ -510,15 +621,15 @@ fun ActionButtons(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.spacedBy(2.dp)
                 ) {
-                    Text("📈", fontSize = 18.sp)
+                    Text("📈", fontSize = 16.sp)
                     Text(
                         "Рейз",
-                        fontSize = 12.sp,
+                        fontSize = 11.sp,
                         fontWeight = FontWeight.Bold
                     )
                     Text(
                         text = "до ${currentBet * 2}",
-                        fontSize = 10.sp,
+                        fontSize = 9.sp,
                         color = Color.White.copy(alpha = 0.9f)
                     )
                 }
@@ -533,7 +644,7 @@ fun ActionButtons(
             ),
             modifier = Modifier
                 .weight(1f)
-                .height(56.dp),
+                .heightIn(min = 48.dp, max = 56.dp),
             shape = RoundedCornerShape(12.dp),
             elevation = ButtonDefaults.buttonElevation(
                 defaultElevation = 6.dp,
@@ -544,10 +655,10 @@ fun ActionButtons(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(2.dp)
             ) {
-                Text("🔥", fontSize = 18.sp)
+                Text("🔥", fontSize = 16.sp)
                 Text(
                     "Олл-ин",
-                    fontSize = 12.sp,
+                    fontSize = 11.sp,
                     fontWeight = FontWeight.ExtraBold,
                     color = Color.Black
                 )

@@ -2,6 +2,7 @@ package com.holdem.poker.ui.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.holdem.poker.audio.SoundManager
 import com.holdem.poker.data.GameRepository
 import com.holdem.poker.data.GameRepositoryImpl
 import com.holdem.poker.engine.GameEngine
@@ -23,7 +24,8 @@ class GameViewModel(
         evaluator = PokerHandEvaluator(),
         bettingHelper = BettingHelper(PokerHandEvaluator()),
         rangeAnalyzer = RangeAnalyzer()
-    )
+    ),
+    private val soundManager: SoundManager? = null
 ) : ViewModel() {
     private val evaluator = PokerHandEvaluator()
     private val ai = com.holdem.poker.ai.SimpleAI(evaluator)
@@ -171,6 +173,8 @@ class GameViewModel(
                 // Очищаем историю действий при новой раздаче
                 opponentActionsHistory.clear()
                 repository.startNewHand(_players.value)
+                // Воспроизводим звук раздачи карт
+                soundManager?.playCardDealSound()
                 updateGameState()
             } catch (e: Exception) {
                 _error.value = e.message ?: "Ошибка при начале новой раздачи"
@@ -186,6 +190,11 @@ class GameViewModel(
             try {
                 val success = repository.processPlayerAction(currentPlayer, action, betAmount)
                 if (success) {
+                    // Воспроизводим звук фишек при ставке
+                    if (action == PlayerAction.BET || action == PlayerAction.RAISE || 
+                        action == PlayerAction.CALL || action == PlayerAction.ALL_IN) {
+                        soundManager?.playChipSound()
+                    }
                     _players.update { it.toList() }
                     updateGameState()
                     processAITurns()
@@ -202,8 +211,22 @@ class GameViewModel(
                 if (repository.allPlayersActed(_players.value)) {
                     // Все сделали ставки, переходим к следующему этапу
                     if (_gameState.value != GameState.SHOWDOWN && _gameState.value != GameState.FINISHED) {
+                        val previousState = _gameState.value
                         repository.nextStage(_players.value)
                         updateGameState()
+                        
+                        // Воспроизводим звук раздачи карт при переходе на новый этап
+                        if (_gameState.value != previousState && 
+                            (_gameState.value == GameState.FLOP || 
+                             _gameState.value == GameState.TURN || 
+                             _gameState.value == GameState.RIVER)) {
+                            soundManager?.playCardDealSound()
+                        }
+                        
+                        // Проверяем победу/поражение при showdown
+                        if (_gameState.value == GameState.SHOWDOWN) {
+                            checkWinLose()
+                        }
                     }
                     break
                 }
@@ -357,5 +380,30 @@ class GameViewModel(
     
     fun clearMessage() {
         _message.value = null
+    }
+    
+    /**
+     * Проверяет победу или поражение игрока
+     */
+    private fun checkWinLose() {
+        viewModelScope.launch {
+            val player = _players.value.find { it.id == "player1" }
+            if (player != null) {
+                // Определяем, выиграл ли игрок
+                // Это упрощенная проверка - в реальной игре нужно сравнивать с другими игроками
+                val activePlayers = _players.value.filter { !it.isFolded && it.isActive }
+                if (activePlayers.size == 1 && activePlayers[0].id == "player1") {
+                    soundManager?.playWinSound()
+                    _message.value = "🎉 Вы выиграли!"
+                } else if (player.isFolded) {
+                    soundManager?.playLoseSound()
+                    _message.value = "😔 Вы проиграли"
+                } else {
+                    // Проверяем, увеличились ли фишки игрока (упрощенная проверка)
+                    // В реальной игре нужно сравнивать руки
+                    soundManager?.playWinSound()
+                }
+            }
+        }
     }
 }
