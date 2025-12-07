@@ -2,6 +2,8 @@ package com.holdem.poker.ui.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.holdem.poker.data.GameRepository
+import com.holdem.poker.data.GameRepositoryImpl
 import com.holdem.poker.engine.GameEngine
 import com.holdem.poker.engine.PokerHandEvaluator
 import com.holdem.poker.model.*
@@ -15,12 +17,16 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-class GameViewModel : ViewModel() {
-    private val gameEngine = GameEngine(smallBlind = 10, bigBlind = 20)
+class GameViewModel(
+    private val repository: GameRepository = GameRepositoryImpl(
+        gameEngine = GameEngine(smallBlind = 10, bigBlind = 20),
+        evaluator = PokerHandEvaluator(),
+        bettingHelper = BettingHelper(PokerHandEvaluator()),
+        rangeAnalyzer = RangeAnalyzer()
+    )
+) : ViewModel() {
     private val evaluator = PokerHandEvaluator()
     private val ai = com.holdem.poker.ai.SimpleAI(evaluator)
-    private val bettingHelper = BettingHelper(evaluator)
-    private val rangeAnalyzer = RangeAnalyzer()
     
     // История действий оппонентов для анализа диапазона
     private val opponentActionsHistory = mutableMapOf<String, MutableList<RangeAnalyzer.OpponentAction>>()
@@ -145,7 +151,7 @@ class GameViewModel : ViewModel() {
             try {
                 // Очищаем историю действий при новой раздаче
                 opponentActionsHistory.clear()
-                gameEngine.startNewHand(_players.value)
+                repository.startNewHand(_players.value)
                 updateGameState()
             } catch (e: Exception) {
                 _error.value = e.message ?: "Ошибка при начале новой раздачи"
@@ -159,7 +165,7 @@ class GameViewModel : ViewModel() {
             if (currentPlayer?.id != "player1") return@launch
             
             try {
-                val success = gameEngine.processPlayerAction(currentPlayer, action, betAmount)
+                val success = repository.processPlayerAction(currentPlayer, action, betAmount)
                 if (success) {
                     _players.update { it.toList() }
                     updateGameState()
@@ -174,10 +180,10 @@ class GameViewModel : ViewModel() {
     private fun processAITurns() {
         viewModelScope.launch {
             while (true) {
-                if (gameEngine.allPlayersActed(_players.value)) {
+                if (repository.allPlayersActed(_players.value)) {
                     // Все сделали ставки, переходим к следующему этапу
                     if (_gameState.value != GameState.SHOWDOWN && _gameState.value != GameState.FINISHED) {
-                        gameEngine.nextStage(_players.value)
+                        repository.nextStage(_players.value)
                         updateGameState()
                     }
                     break
@@ -193,7 +199,7 @@ class GameViewModel : ViewModel() {
                 val aiAction = ai.makeDecision(
                     currentPlayer!!,
                     _communityCards.value,
-                    gameEngine.currentBet,
+                    repository.getCurrentBet(),
                     _pot.value
                 )
                 
@@ -203,12 +209,12 @@ class GameViewModel : ViewModel() {
                     else -> 0
                 }
                 
-                gameEngine.processPlayerAction(currentPlayer, aiAction, betAmount)
+                repository.processPlayerAction(currentPlayer, aiAction, betAmount)
                 // Записываем действие AI для анализа диапазона
                 recordOpponentAction(currentPlayer.id, aiAction, betAmount)
                 _players.update { it.toList() }
-                gameEngine.nextPlayer(_players.value)
-                _currentPlayerIndex.value = gameEngine.currentPlayerIndex
+                repository.nextPlayer(_players.value)
+                _currentPlayerIndex.value = repository.getCurrentPlayerIndex()
                 
                 // Небольшая задержка для визуализации
                 kotlinx.coroutines.delay(1000)
@@ -217,11 +223,11 @@ class GameViewModel : ViewModel() {
     }
     
     private fun updateGameState() {
-        _gameState.value = gameEngine.gameState
-        _communityCards.value = gameEngine.communityCards
-        _pot.value = gameEngine.pot
-        _currentBet.value = gameEngine.currentBet
-        _currentPlayerIndex.value = gameEngine.currentPlayerIndex
+        _gameState.value = repository.getGameState()
+        _communityCards.value = repository.getCommunityCards()
+        _pot.value = repository.getPot()
+        _currentBet.value = repository.getCurrentBet()
+        _currentPlayerIndex.value = repository.getCurrentPlayerIndex()
         
         // Обновляем подсказки по ставкам для текущего игрока
         updateBettingRecommendation()
@@ -231,60 +237,64 @@ class GameViewModel : ViewModel() {
     }
     
     private fun updateBettingRecommendation() {
-        val currentPlayer = _players.value.getOrNull(_currentPlayerIndex.value) ?: return
-        if (currentPlayer.id != "player1" || currentPlayer.isFolded) {
-            _bettingRecommendation.value = null
-            return
+        viewModelScope.launch {
+            val currentPlayer = _players.value.getOrNull(_currentPlayerIndex.value) ?: return@launch
+            if (currentPlayer.id != "player1" || currentPlayer.isFolded) {
+                _bettingRecommendation.value = null
+                return@launch
+            }
+            
+            val position = calculatePosition(_currentPlayerIndex.value, _players.value.size)
+            val activePlayers = _players.value.count { !it.isFolded && it.isActive }
+            
+            val recommendation = repository.getBettingRecommendation(
+                player = currentPlayer,
+                communityCards = _communityCards.value,
+                pot = _pot.value,
+                currentBet = _currentBet.value,
+                position = position,
+                activePlayers = activePlayers
+            )
+            
+            _bettingRecommendation.value = recommendation
         }
-        
-        val position = calculatePosition(_currentPlayerIndex.value, _players.value.size)
-        val activePlayers = _players.value.count { !it.isFolded && it.isActive }
-        
-        val recommendation = bettingHelper.getBettingRecommendation(
-            player = currentPlayer,
-            communityCards = _communityCards.value,
-            pot = _pot.value,
-            currentBet = _currentBet.value,
-            position = position,
-            activePlayers = activePlayers
-        )
-        
-        _bettingRecommendation.value = recommendation
     }
     
     private fun analyzeOpponentRanges() {
-        val ranges = mutableMapOf<String, RangeAnalyzer.HandRange>()
-        val strengths = mutableMapOf<String, RangeAnalyzer.RangeStrength>()
-        
-        _players.value.forEach { player ->
-            if (player.id != "player1" && !player.isFolded) {
-                val actions = opponentActionsHistory[player.id] ?: emptyList()
-                if (actions.isNotEmpty()) {
-                    val position = calculatePosition(
-                        _players.value.indexOf(player),
-                        _players.value.size
-                    )
-                    
-                    val range = rangeAnalyzer.analyzeOpponentRange(
-                        opponentActions = actions,
-                        communityCards = _communityCards.value,
-                        pot = _pot.value,
-                        position = position
-                    )
-                    
-                    val strength = rangeAnalyzer.evaluateRangeStrength(
-                        range = range,
-                        communityCards = _communityCards.value
-                    )
-                    
-                    ranges[player.id] = range
-                    strengths[player.id] = strength
+        viewModelScope.launch {
+            val ranges = mutableMapOf<String, RangeAnalyzer.HandRange>()
+            val strengths = mutableMapOf<String, RangeAnalyzer.RangeStrength>()
+            
+            _players.value.forEach { player ->
+                if (player.id != "player1" && !player.isFolded) {
+                    val actions = opponentActionsHistory[player.id] ?: emptyList()
+                    if (actions.isNotEmpty()) {
+                        val position = calculatePosition(
+                            _players.value.indexOf(player),
+                            _players.value.size
+                        )
+                        
+                        val range = repository.analyzeOpponentRange(
+                            opponentActions = actions,
+                            communityCards = _communityCards.value,
+                            pot = _pot.value,
+                            position = position
+                        )
+                        
+                        val strength = repository.evaluateRangeStrength(
+                            range = range,
+                            communityCards = _communityCards.value
+                        )
+                        
+                        ranges[player.id] = range
+                        strengths[player.id] = strength
+                    }
                 }
             }
+            
+            _opponentRanges.value = ranges
+            _rangeStrengths.value = strengths
         }
-        
-        _opponentRanges.value = ranges
-        _rangeStrengths.value = strengths
     }
     
     private fun calculatePosition(playerIndex: Int, totalPlayers: Int): Int {
