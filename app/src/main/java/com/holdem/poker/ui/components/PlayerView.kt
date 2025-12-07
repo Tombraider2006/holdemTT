@@ -86,7 +86,7 @@ fun PlayerView(
             }
         }
         
-        // Блайнды
+        // Blinds
         if (player.isSmallBlind || player.isBigBlind) {
             Spacer(modifier = Modifier.height(4.dp))
             Text(

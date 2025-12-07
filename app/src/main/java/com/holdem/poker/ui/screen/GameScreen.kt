@@ -156,7 +156,7 @@ fun GameScreen(viewModel: GameViewModel = viewModel()) {
                 }
             }
             
-            // Банк и информация о ставках
+            // Pot и информация о ставках
             Column(
                 modifier = Modifier.padding(16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
@@ -171,7 +171,7 @@ fun GameScreen(viewModel: GameViewModel = viewModel()) {
                 ) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Text(
-                            text = "Банк: $pot",
+                            text = "Pot: $pot",
                             fontSize = 24.sp,
                             fontWeight = FontWeight.Bold,
                             color = Color.White
