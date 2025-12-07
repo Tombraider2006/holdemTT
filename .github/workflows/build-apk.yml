@@ -93,22 +93,36 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     
-    - name: Upload APK to Release (manual trigger)
-      if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main'
+    - name: Create Release and Upload APK
+      if: success() && (github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main')
       uses: softprops/action-gh-release@v1
       with:
-        tag_name: v${{ github.run_number }}
-        name: Release v${{ github.run_number }}
+        tag_name: v0.2
+        name: Release v0.2 - Улучшения архитектуры
         body: |
-          Автоматический релиз из workflow run #${{ github.run_number }}
+          ## Техасский Холдем для Android v0.2
           
-          ## Изменения
-          - Собран APK с последними изменениями
-          - Debug и Release версии
+          ### 🚀 Основные улучшения
+          - Обновлены зависимости до актуальных версий
+          - Внедрен UiState паттерн
+          - Добавлен Repository слой
+          - Оптимизация производительности
+          - Исправлены все ошибки компиляции
+          
+          ### 📱 Возможности
+          - Полная игровая логика техасского холдема
+          - Подсказки по ставкам (GTO стратегия)
+          - Анализ диапазонов оппонентов
+          - Современный UI на Jetpack Compose
+          
+          ### 📥 Установка
+          1. Скачайте APK из раздела Assets ниже
+          2. Разрешите установку из неизвестных источников
+          3. Установите APK файл
         files: |
           app/build/outputs/apk/debug/app-debug.apk
-          app/build/outputs/apk/release/app-release.apk
         draft: false
         prerelease: false
+        make_latest: true
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
