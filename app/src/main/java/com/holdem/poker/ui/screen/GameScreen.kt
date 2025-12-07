@@ -7,6 +7,8 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.unit.Dp
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -19,6 +21,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.holdem.poker.audio.rememberSoundManager
@@ -55,6 +60,22 @@ fun GameScreen(
     val opponentRanges = uiState.opponentRanges
     val rangeStrengths = uiState.rangeStrengths
     
+    // Определяем ориентацию и размеры экрана
+    val configuration = LocalConfiguration.current
+    val screenWidth = configuration.screenWidthDp.dp
+    val screenHeight = configuration.screenHeightDp.dp
+    val isPortrait = screenHeight > screenWidth
+    val isNarrowScreen = if (isPortrait) screenWidth < 400.dp else screenHeight < 400.dp
+    
+    // Адаптивные размеры в зависимости от ориентации
+    val cardSize = if (isPortrait) 40.dp else 60.dp
+    val cardHeight = if (isPortrait) 56.dp else 84.dp
+    val spacing = if (isPortrait) 8.dp else 12.dp
+    val buttonHeight = if (isPortrait) 44.dp else 56.dp
+    val bottomPadding = if (isPortrait) 160.dp else 200.dp
+    
+    val scrollState = rememberScrollState()
+    
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -68,12 +89,12 @@ fun GameScreen(
                 )
             )
     ) {
-        // Скроллируемый контент
+        // Скроллируемый контент (без видимой полосы прокрутки)
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .verticalScroll(rememberScrollState())
-                .padding(bottom = 80.dp), // Отступ для фиксированных кнопок
+                .verticalScroll(scrollState)
+                .padding(bottom = bottomPadding),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             // Обработка ошибок с улучшенным дизайном
@@ -393,6 +414,7 @@ fun GameScreen(
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
                     .fillMaxWidth()
+                    .windowInsetsPadding(WindowInsets.navigationBars)
                     .background(
                         brush = Brush.verticalGradient(
                             colors = listOf(
@@ -401,7 +423,7 @@ fun GameScreen(
                             )
                         )
                     )
-                    .padding(horizontal = 16.dp, vertical = 12.dp)
+                    .padding(horizontal = 16.dp, vertical = 8.dp)
             ) {
                 ActionButtons(
                     viewModel = viewModel,
@@ -427,27 +449,45 @@ fun ActionButtons(
     
     Column(
         modifier = Modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
+        verticalArrangement = Arrangement.spacedBy(6.dp)
     ) {
-        // Слайдер для выбора суммы ставки (drag and drop)
+        // Слайдер для выбора суммы ставки (drag and drop) - компактная версия
         if (currentBet == 0 || currentBet == playerCurrentBet) {
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 colors = CardDefaults.cardColors(
                     containerColor = Color(0xFF1E3A5F).copy(alpha = 0.8f)
                 ),
-                shape = RoundedCornerShape(12.dp)
+                shape = RoundedCornerShape(8.dp)
             ) {
                 Column(
-                    modifier = Modifier.padding(12.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
-                    Text(
-                        text = "💰 Сумма ставки: $betAmount",
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Color.White
-                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "💰 $betAmount",
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White
+                        )
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Text(
+                                text = "Мин: $minBet",
+                                fontSize = 9.sp,
+                                color = Color.White.copy(alpha = 0.7f)
+                            )
+                            Text(
+                                text = "Макс: $maxBet",
+                                fontSize = 9.sp,
+                                color = Color.White.copy(alpha = 0.7f)
+                            )
+                        }
+                    }
                     Slider(
                         value = betAmount.toFloat(),
                         onValueChange = { betAmount = it.roundToInt().coerceIn(minBet, maxBet) },
@@ -459,21 +499,6 @@ fun ActionButtons(
                             inactiveTrackColor = Color.White.copy(alpha = 0.3f)
                         )
                     )
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Text(
-                            text = "Мин: $minBet",
-                            fontSize = 10.sp,
-                            color = Color.White.copy(alpha = 0.7f)
-                        )
-                        Text(
-                            text = "Макс: $maxBet",
-                            fontSize = 10.sp,
-                            color = Color.White.copy(alpha = 0.7f)
-                        )
-                    }
                 }
             }
         }
