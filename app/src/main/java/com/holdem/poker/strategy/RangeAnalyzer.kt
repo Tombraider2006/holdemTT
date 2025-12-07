@@ -76,7 +76,7 @@ class RangeAnalyzer {
     ): RangeStrength {
         val evaluator = com.holdem.poker.engine.PokerHandEvaluator()
         
-        val strengths = range.possibleHands.mapNotNull { hand ->
+        val strengths = range.possibleHands.map { hand ->
             if (communityCards.size >= 3) {
                 val evaluation = evaluator.evaluateBestHand(
                     listOf(hand.first, hand.second),
@@ -86,6 +86,15 @@ class RangeAnalyzer {
             } else {
                 evaluatePreFlopStrength(hand.first, hand.second).toDouble()
             }
+        }
+        
+        if (strengths.isEmpty()) {
+            return RangeStrength(
+                average = 0f,
+                maximum = 0f,
+                minimum = 0f,
+                distribution = emptyMap()
+            )
         }
         
         val avgStrength = strengths.average()
