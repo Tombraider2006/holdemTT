@@ -30,8 +30,11 @@ jobs:
     - name: Setup Android SDK
       uses: android-actions/setup-android@v3
       with:
-        api-level: 35
-        build-tools: 35.0.0
+        packages: |
+          platform-tools
+          platforms;android-35
+          build-tools;35.0.0
+        accept-android-sdk-licenses: true
       
     - name: Accept Android SDK Licenses
       run: |
@@ -105,7 +108,6 @@ jobs:
           app/build/outputs/apk/release/app-release.apk
         draft: false
         prerelease: false
-        make_latest: true
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
